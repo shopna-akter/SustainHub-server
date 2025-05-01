@@ -39,3 +39,12 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   }
   next();
 };
+
+export const checkRole = (role: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.role !== role) {
+      return res.status(403).json({ error: `You do not have ${role} rights` });
+    }
+    next();
+  };
+};
