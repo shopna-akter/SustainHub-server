@@ -8,7 +8,13 @@ import { z } from 'zod';
 
 const prisma = new PrismaClient();
 
-// Create an Idea
+interface ApproveRejectIdeaParams {
+    id: string;
+}
+
+interface RejectIdeaBody {
+    feedback: string;
+}
 export const createIdea = async (req: Request, res: Response): Promise<void> => {
     try {
         const validatedData = ideaCreateSchema.parse(req.body);
@@ -78,62 +84,75 @@ export const updateIdea = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
-// Submit Idea for Review
-export const submitIdea = async (req: Request, res: Response) => {
+export const submitIdea = async (req: Request, res: Response): Promise<void> => {
     try {
-        const validatedData = ideaSubmitSchema.parse(req.params);
-
-        const { id } = validatedData;
+        const { id } = req.params;
         const userId = req.userId;
 
-        const idea = await prisma.idea.findUnique({ where: { id } });
-        if (!idea || idea.userId !== userId || idea.status !== IdeaStatus.DRAFT) {
-            return res.status(403).json({ error: 'You can only submit your draft ideas' });
+        if (!userId) {
+            res.status(400).json({ error: 'User not authenticated' });
+            return;
         }
 
-        const submittedIdea = await prisma.idea.update({
+        const idea = await prisma.idea.findUnique({ where: { id } });
+
+        if (!idea) {
+            res.status(404).json({ error: 'Idea not found' });
+            return;
+        }
+
+        if (idea.userId !== userId) {
+            res.status(403).json({ error: 'You can only submit your own ideas' });
+            return;
+        }
+
+        // Validate the idea before submission
+        await ideaSubmitSchema.parseAsync(idea);
+
+        const updatedIdea = await prisma.idea.update({
             where: { id },
             data: { status: IdeaStatus.PENDING },
         });
 
-        return res.status(200).json(submittedIdea);
+        res.status(200).json(updatedIdea);
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: error.errors });
-        }
-        return res.status(500).json({ error: 'Error submitting idea for review' });
+        res.status(500).json({ error: 'Error submitting idea' });
     }
 };
 
-// Admin Approve Idea
-export const approveIdea = async (req: Request, res: Response) => {
-    const ideaId = req.params.id;
-
+export const approveIdea = async (
+    req: Request<{ id: string }>,
+    res: Response
+  ): Promise<void> => {
+    const { id } = req.params;
+  
     try {
-        const idea = await prisma.idea.update({
-            where: { id: ideaId },
-            data: { status: IdeaStatus.APPROVED },
-        });
-
-        return res.status(200).json(idea);
+      const idea = await prisma.idea.update({
+        where: { id },
+        data: { status: IdeaStatus.APPROVED },
+      });
+  
+      res.status(200).json(idea);
     } catch (error) {
-        return res.status(500).json({ error: 'Error approving idea' });
+      res.status(500).json({ error: 'Error approving idea' });
     }
-};
-
-// Admin Reject Idea
-export const rejectIdea = async (req: Request, res: Response) => {
-    const ideaId = req.params.id;
+  };
+  
+  export const rejectIdea = async (
+    req: Request<{ id: string }, {}, { feedback: string }>,
+    res: Response
+  ): Promise<void> => {
+    const { id } = req.params;
     const { feedback } = req.body;
-
+  
     try {
-        const idea = await prisma.idea.update({
-            where: { id: ideaId },
-            data: { status: IdeaStatus.REJECTED, feedback },
-        });
-
-        return res.status(200).json(idea);
+      const idea = await prisma.idea.update({
+        where: { id },
+        data: { status: IdeaStatus.REJECTED, feedback },
+      });
+  
+      res.status(200).json(idea);
     } catch (error) {
-        return res.status(500).json({ error: 'Error rejecting idea' });
+      res.status(500).json({ error: 'Error rejecting idea' });
     }
-};
+  };

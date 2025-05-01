@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 
 declare module 'express' {
@@ -40,10 +40,11 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-export const checkRole = (role: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+export const checkRole = (role: string): RequestHandler => {
+  return (req, res, next) => {
     if (req.role !== role) {
-      return res.status(403).json({ error: `You do not have ${role} rights` });
+      res.status(403).json({ error: `You do not have ${role} rights` });
+      return;
     }
     next();
   };
