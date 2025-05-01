@@ -1,16 +1,18 @@
 import express from 'express';
-import { UserRoutes } from '../modules/user/user.route';
-// import { IdeaRoutes } from '../modules/idea/idea.routes';
-// import { CommentRoutes } from '../modules/comment/comment.routes';
-// import { VoteRoutes } from '../modules/vote/vote.routes';
-// import { CategoryRoutes } from '../modules/category/category.routes';
+import authRoutes from '../modules/auth/auth.routes';
+import adminRoutes from '../modules/admin/admin.routes';
+import categoryRoutes from '../modules/category/category.routes';
+import ideaRoutes from '../modules/idea/idea.routes';
+import commentRoutes from '../modules/comment/comment.routes';
+import voteRoutes from '../modules/vote/vote.routes';
 
 const router = express.Router();
 
-router.use('/api/users', UserRoutes);
-// router.use('/api/ideas', IdeaRoutes);
-// router.use('/api/comments', CommentRoutes);
-// router.use('/api/votes', VoteRoutes);
-// router.use('/api/categories', CategoryRoutes);
+router.use('/auth', authRoutes);
+router.use('/admin', adminRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/ideas', ideaRoutes);
+router.use('/comments', commentRoutes);
+router.use('/votes', voteRoutes);
 
 export default router;
