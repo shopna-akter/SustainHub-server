@@ -1,28 +1,41 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-interface JwtPayload {
-  userId: string;
-  role: string;
+declare module 'express' {
+  interface Request {
+    userId?: string;
+    role?: string;
+  }
 }
 
-export const authMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
+
+export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers['authorization']?.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ message: 'Access denied. No token provided.' });
+    res.status(403).json({ error: 'No token provided' });
+    return;
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    req.userId = decoded.userId;
-    req.role = decoded.role; // Include this if you're handling roles
+  jwt.verify(token, JWT_SECRET, (err, decoded: unknown) => {
+    if (err) {
+      res.status(403).json({ error: 'Failed to authenticate token' });
+      return;
+    }
+
+    const { id, role } = decoded as { id: string; role: string };
+    req.userId = id;
+    req.role = role;
+
     next();
-  } catch (error) {
-    return res.status(401).json({ message: 'Invalid token.' });
+  });
+};
+
+export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (req.role !== 'ADMIN') {
+    res.status(403).json({ error: 'You do not have admin rights' });
+    return;
   }
+  next();
 };
