@@ -40,7 +40,6 @@ model Idea {
   createdAt   DateTime    @default(now())
 }
 
-
 model Comment {
   id        String    @id @default(uuid())
   content   String
@@ -48,14 +47,11 @@ model Comment {
   userId    String
   idea      Idea      @relation(fields: [ideaId], references: [id])
   ideaId    String
-
   parentId  String?
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies   Comment[] @relation("CommentReplies")
-
   createdAt DateTime  @default(now())
 }
-
 
 model Vote {
   id      String   @id @default(uuid())
