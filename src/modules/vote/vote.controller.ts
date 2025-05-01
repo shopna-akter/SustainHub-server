@@ -6,10 +6,9 @@ import {
   getVotesByIdeaId,
 } from './vote.service';
 
-export const voteOnIdea = async (req: Request, res: Response): Promise<void> => {
+export const castVote = async (req: Request, res: Response): Promise<void> => {
   const userId = req.userId;
-  const ideaId = req.params.ideaId;
-  const { type } = req.body;
+  const { ideaId, type } = req.body;
 
   if (!userId || !ideaId || !type) {
     res.status(400).json({ error: 'Missing required fields' });
@@ -28,7 +27,7 @@ export const voteOnIdea = async (req: Request, res: Response): Promise<void> => 
   res.status(200).json(vote);
 };
 
-export const getIdeaVotes = async (req: Request, res: Response): Promise<void> => {
+export const getVotesForIdea = async (req: Request, res: Response): Promise<void> => {
   const ideaId = req.params.ideaId;
 
   if (!ideaId) {
