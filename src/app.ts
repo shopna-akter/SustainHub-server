@@ -3,7 +3,6 @@ import type { Application, Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import './types/express' 
 import router from './routes';
 import globalErrorHandler from './middlewares/globalErrorHandler';
 

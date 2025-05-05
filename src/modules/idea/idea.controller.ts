@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// src/modules/idea/ideaController.ts
 import type { Request, Response } from 'express';
 import { PrismaClient, IdeaStatus } from '@prisma/client';
 import { ideaCreateSchema, ideaUpdateSchema, ideaSubmitSchema } from './idea.validation';
@@ -17,9 +16,11 @@ interface RejectIdeaBody {
 }
 export const createIdea = async (req: Request, res: Response): Promise<void> => {
     try {
-        const validatedData = ideaCreateSchema.parse(req.body);
+        const validated = ideaCreateSchema.omit({ images: true }).parse(req.body);
 
-        const { title, problem, solution, description, images, categoryId, price, isPaid } = validatedData;
+        const imageUrls = (req.files as Express.Multer.File[]).map((file) => file.path);
+
+        const { title, problem, solution, description, categoryId, price, isPaid } = validated;
         const userId = req.userId;
 
         const newIdea = await prisma.idea.create({
@@ -28,11 +29,11 @@ export const createIdea = async (req: Request, res: Response): Promise<void> => 
                 problem,
                 solution,
                 description,
-                images,
                 categoryId,
                 price,
                 isPaid,
-                userId: userId || '',  // Make sure to handle undefined properly
+                images: imageUrls,
+                userId: userId ?? '',
                 status: IdeaStatus.DRAFT,
             },
         });
@@ -123,36 +124,36 @@ export const submitIdea = async (req: Request, res: Response): Promise<void> => 
 export const approveIdea = async (
     req: Request<{ id: string }>,
     res: Response
-  ): Promise<void> => {
+): Promise<void> => {
     const { id } = req.params;
-  
+
     try {
-      const idea = await prisma.idea.update({
-        where: { id },
-        data: { status: IdeaStatus.APPROVED },
-      });
-  
-      res.status(200).json(idea);
+        const idea = await prisma.idea.update({
+            where: { id },
+            data: { status: IdeaStatus.APPROVED },
+        });
+
+        res.status(200).json(idea);
     } catch (error) {
-      res.status(500).json({ error: 'Error approving idea' });
+        res.status(500).json({ error: 'Error approving idea' });
     }
-  };
-  
-  export const rejectIdea = async (
+};
+
+export const rejectIdea = async (
     req: Request<{ id: string }, {}, { feedback: string }>,
     res: Response
-  ): Promise<void> => {
+): Promise<void> => {
     const { id } = req.params;
     const { feedback } = req.body;
-  
+
     try {
-      const idea = await prisma.idea.update({
-        where: { id },
-        data: { status: IdeaStatus.REJECTED, feedback },
-      });
-  
-      res.status(200).json(idea);
+        const idea = await prisma.idea.update({
+            where: { id },
+            data: { status: IdeaStatus.REJECTED, feedback },
+        });
+
+        res.status(200).json(idea);
     } catch (error) {
-      res.status(500).json({ error: 'Error rejecting idea' });
+        res.status(500).json({ error: 'Error rejecting idea' });
     }
-  };
+};

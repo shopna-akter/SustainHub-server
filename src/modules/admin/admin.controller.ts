@@ -49,3 +49,25 @@ export const getAllIdeas = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({ error: 'Failed to fetch ideas' });
   }
 };
+
+export const updateUserRole = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.params.id;
+  const { role } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { role },
+    });
+
+    res.status(200).json(updated);
+  } catch {
+    res.status(500).json({ error: 'Failed to update user role' });
+  }
+};
